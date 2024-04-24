@@ -13,3 +13,4 @@
 .vboxclient-vmsvga-session-tty2-control.pid
 .vboxclient-vmsvga-session-tty2-service.pid
 snap/
+.lesshst
