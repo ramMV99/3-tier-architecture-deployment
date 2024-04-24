@@ -1,0 +1,14 @@
+.cache/
+.config/
+.gitconfig
+.local/
+.vboxclient-clipboard-tty2-control.pid
+.vboxclient-clipboard-tty2-service.pid
+.vboxclient-draganddrop-tty2-control.pid
+.vboxclient-draganddrop-tty2-service.pid
+.vboxclient-hostversion-tty2-control.pid
+.vboxclient-seamless-tty2-control.pid
+.vboxclient-seamless-tty2-service.pid
+.vboxclient-vmsvga-session-tty2-control.pid
+.vboxclient-vmsvga-session-tty2-service.pid
+snap/
