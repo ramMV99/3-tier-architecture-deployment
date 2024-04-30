@@ -1,0 +1,138 @@
+                               Deploying 2 Tier Architecture on AWS 
+
+* In this project, we deploy a 2048 game application onto Load Balancer to expose it to public user IP.
+
+Step1: Install & Download kubectl
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+kubectl version --client
+
+Step2: Intall & Download eks ctl
+
+ARCH=amd64
+PLATFORM=$(uname -s)_$ARCH
+
+curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+
+curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+
+tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
+
+sudo mv /tmp/eksctl /usr/local/bin
+
+eksctl version --> To verify whether installed or not 
+
+
+Step3: Download and install AWS CLI 
+
+
+Step4: eksctl create cluster --name myappcluster --region us-east-1 --fargate
+
+Step5: Now go and check in aws console whether a cluster is created
+
+
+Step6: aws eks update-kubeconfig --name myappcluster --region us-east-1
+
+Step7: eksctl create fargateprofile \
+    --cluster demo-cluster \
+    --region us-east-1 \
+    --name alb-sample-app \
+    --namespace game-2048
+
+This will create a new fargate profile named as game 2048 as a new namespace in the console 
+
+Step8: kubectl get pods -n game-2048 #To create pods 
+       kubectl get pods -n game-2048 -w #To watch the state of pods
+       kubectl get svc -n game-2048 #To search for the ingress service
+
+Step9: kubectl get ingress -n game-2048 # To check ingress is created
+
+Now we will create an ingress controller which reads this ingress-2048 and creates a load balancer for us
+
+Step10: eksctl utils associate-iam-oidc-provider --cluster myappcluster --approve
+
+Step11: curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.5.4/docs/install/iam_policy.json 
+
+Download IAM Policy (we can get it from the ALB controller documentation)
+
+Step12: aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam_policy.json
+
+Create IAM policy with above command
+
+Step13: Now create IAM role to the policy & attaching this role to the service account of the pod
+
+eksctl create iamserviceaccount \
+  --cluster=<your-cluster-name> \
+  --namespace=kube-system \
+  --name=aws-load-balancer-controller \
+  --role-name AmazonEKSLoadBalancerControllerRole \
+  --attach-policy-arn=arn:aws:iam::<your-aws-account-id>:policy/AWSLoadBalancerControllerIAMPolicy \
+  --approve
+
+Step14: sudo snap install helm --classic (If helm not installed) then do below cmd,
+helm repo add eks https://aws.github.io/eks-charts (Will create the actual controller)
+
+Step15: helm repo update eks
+
+Step16: Now install the helm chart
+
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system \
+  --set clusterName=<your cluster name> \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --set region=us-east-1 \
+  --set vpcId=<your VPC ID>
+
+Step 17: Verify whether Load balancer is created and have atleast 2 replicas of it 
+
+kubectl get deployment -n kube-system aws-load-balancer-controller
+
+-------------------------------------------------------------------------------------------
+When still they are not getting created:
+
+# To debug any errors command is :
+kubectl edit deploy/aws-load-balancer-controller -n kube-system
+
+eksctl create iamserviceaccount \
+  --cluster=myappcluster \
+  --namespace=kube-system \
+  --name=aws-load-balancer-controller \
+  --role-name AmazonEKSLoadBalancerControllerRole \
+  --attach-policy-arn=arn:aws:iam::2111-2570-5638:policy/AWSLoadBalancerControllerIAMPolicy \
+  --approve
+  --override-existing-serviceaccounts
+
+
+
+
+
+----------------------------------------------------------------------------------------------
+
+kubectl get pods -n kube-system -w (To watch the state of PODS whether they are active and running)
+
+kubectl get deploy -n kube-system (To check the load balancer state whether it's active and running)
+
+
+Step 18: After it is up and running, go to AWS console to check whether Load Balancer is created. 
+
+So the load-balancer-controller has created this load balancer 
+
+kubectl get ingress -n game-2048   (Since it is in game-2048 namespace)
+
+From above cmd we will get the address (load balancer that is created by ingress controller watching the ingress resource) of our ingress resource.
+
+Step 19: Go to the load balancer in AWS console, and verify the DNS name; that will be same as the above address. 
+
+Step 20: Once the status of it is active, take that address and paste it in your browser with http://
+ 
+
+
