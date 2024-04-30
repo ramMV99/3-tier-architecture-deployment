@@ -1,0 +1,5 @@
+../../.aws/
+../../.bash_history
+../../.kube/
+../aws/
+../../iam_policy.json

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .cache/
 .config/
 .gitconfig
@@ -14,3 +15,10 @@
 .vboxclient-vmsvga-session-tty2-service.pid
 snap/
 .lesshst
+=======
+.*.swp
+.DS_Store
+*-private.*
+vendor/
+Gopkg.lock
+>>>>>>> 687a8763ac358bc99eb4b2e5cddb548376803d88
